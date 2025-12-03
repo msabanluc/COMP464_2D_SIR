@@ -118,10 +118,11 @@ void initialize(SimulationData& sim, int w, int h) {
     }
 }
 
-// Check 8 neighbors for any Infectious cell
-inline bool checkInfectious(const SimulationData& sim, int r, int c) {
+// Check 8 neighbors and return count of Infectious cells
+inline int checkInfectious(const SimulationData& sim, int r, int c) {
     int w = sim.width;
     int h = sim.height;
+    int count = 0;
     
     for (int dr = -1; dr <= 1; ++dr) { // Loop over neighbor rows
         for (int dc = -1; dc <= 1; ++dc) { // Loop over neighbor columns (Creates a 3x3 neighborhood with center at (r,c))
@@ -133,12 +134,12 @@ inline bool checkInfectious(const SimulationData& sim, int r, int c) {
             
             if (nr >= 0 && nr < h && nc >= 0 && nc < w) { // Make sure neighbor is within bounds of the grid
                 if (sim.state[nr * w + nc] == Infectious) {
-                    return true; // If any neighbor is Infectious, return true
+                    count++;
                 }
             }
         }
     }
-    return false;
+    return count;
 }
 
 // Update simulation state for one time step
@@ -153,8 +154,12 @@ void update(SimulationData& sim) {
             float density = sim.popDensity[idx];
             
             if (s == Susceptible) {
-                if (density > 0.0f && checkInfectious(sim, r, c)) { // If a cell is susceptible, has population density > 0, and has at least one infectious neighbor, run check to see if it becomes infected
-                    float prob = (0.8f / (1.0f + 1800.0f * std::exp(-15.0f * density))) + 0.1f; // Infection probability formula (could tweak these parameters)
+                int infectedNeighbors = checkInfectious(sim, r, c);
+                if (density > 0.0f && infectedNeighbors > 0) { // If a cell is susceptible, has population density > 0, and has at least one infectious neighbor, state may change to infectious
+                    float baseProb = (0.8f / (1.0f + 1800.0f * std::exp(-15.0f * density))) + 0.1f; // Base infection probability based on density
+                    
+                    float prob = 1.0f - std::pow(1.0f - baseProb, (float)infectedNeighbors); // Adjust probability based on number of infected neighbors: 1 - (1 - p)^k
+
                     if (fast_rand(sim.rng_state[idx]) < prob) { // Infection occurs based on probability
                         sim.next_state[idx] = Infectious;
                         sim.time[idx] = 0; // Reset time counter on state change
