@@ -188,6 +188,10 @@ int main(int argc, char** argv) {
     std::cout << "Time elapsed: " << elapsed.count() << " seconds\n";
     std::cout << "Average time per step: " << (elapsed.count() / steps) * 1000.0 << " ms\n";
     
+    // CSV Output: Steps, Width, Height, TotalTime(s), TimePerStep(ms)
+    std::cout << "CSV_DATA," << steps << "," << width << "," << height << "," 
+              << elapsed.count() << "," << (elapsed.count() / steps) * 1000.0 << "\n";
+
     print_stats(sim, steps);
 
     return 0;
