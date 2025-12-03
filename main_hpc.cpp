@@ -70,16 +70,49 @@ void initialize(SimulationData& sim, int w, int h) {
         float val = (std::sin(r * 0.05f) + std::cos(c * 0.05f) + 2.0f) / 4.0f;
         // Add some noise
         val += (fast_rand(sim.rng_state[i]) - 0.5f) * 0.2f;
+
+        // Island Mask
+        // Normalize coordinates to -1.0 to 1.0 regardless of map size
+        float nx = (2.0f * c / w) - 1.0f;
+        float ny = (2.0f * r / h) - 1.0f;
+        float dist = std::sqrt(nx*nx + ny*ny);
+        
+        // Create circular mask
+        float islandMask = 1.0f - std::pow(dist, 2.0f); 
+        if (islandMask < 0.0f) islandMask = 0.0f;
+        val *= islandMask;
+
+        // Partial River
+        if (r > h / 2) {
+            // Scale river width to be 1.5% of the map width
+            float riverWidth = w * 0.015f;
+            if (riverWidth < 1.0f) riverWidth = 1.0f; // Minimum 1 pixel
+
+            // Calculate path using normalized height (0.5 to 1.0)
+            float normR = (float)r / h; 
+            
+            // Sine wave for the river path. 
+            float centerOffset = (w * 0.1f) * std::sin(normR * 10.0f);
+            float riverCenter = (w / 2.0f) + centerOffset;
+
+            // Carve the river
+            if (std::abs(c - riverCenter) < riverWidth) {
+                val = 0.0f; // Uninhabited (Water)
+            }
+        }
+
         // Constrain to [0.0, 1.0]
         val = std::max(0.0f, std::min(1.0f, val));
         
         sim.popDensity[i] = val;
 
         // Initialize state based on initialInfectious probability
-        if (val > 0.0f && fast_rand(sim.rng_state[i]) < initialInfectious) {
+        if (val == 0.0f) {
+            sim.state[i] = Resistant; // Uninhabited areas are permanently resistant (water/empty)
+        } else if (fast_rand(sim.rng_state[i]) < initialInfectious) {
             sim.state[i] = Infectious; // If population density > 0, small chance to start in Infectious state
         } else {
-            sim.state[i] = Susceptible; // If population density is 0 or the random check fails, start in Susceptible state
+            sim.state[i] = Susceptible; // Otherwise start in Susceptible state
         }
         sim.next_state[i] = sim.state[i]; // Initialize next_state to current state
     }
@@ -140,7 +173,10 @@ void update(SimulationData& sim) {
                     sim.time[idx]++;
                 }
             } else if (s == Resistant) {
-                if (sim.time[idx] >= resistantTime) { // Become susceptible after resistantTime steps
+                if (density == 0.0f) {
+                    sim.next_state[idx] = Resistant; // Permanently resistant (water/empty)
+                    sim.time[idx] = 0;
+                } else if (sim.time[idx] >= resistantTime) { // Become susceptible after resistantTime steps
                     sim.next_state[idx] = Susceptible;
                     sim.time[idx] = 0;
                 } else {
