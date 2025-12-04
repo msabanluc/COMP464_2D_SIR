@@ -222,9 +222,11 @@ int main(int argc, char** argv) {
     SimulationData sim; // Create empty simulation data structure
     initialize(sim, width, height); // Initialize simulation data with synthetic values
 
+    print_stats(sim, 0); // Print initial stats
+
     auto start_time = std::chrono::high_resolution_clock::now(); // Start timing
 
-    for (int i = 0; i < steps; ++i) { // Loop over simulation steps
+    for (int i = 1; i <= steps; ++i) { // Loop over simulation steps
         update(sim);
         if (i % 100 == 0) { // Print stats every 100 steps
             print_stats(sim, i); 
