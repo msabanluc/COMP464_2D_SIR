@@ -6,6 +6,7 @@
 #include <chrono>
 #include <random>
 #include <algorithm>
+#include <omp.h>
 
 // Default simulation properties
 const int DEFAULT_WIDTH = 500;
@@ -62,6 +63,7 @@ void initialize(SimulationData& sim, int w, int h) {
     }
 
     // Initialize with synthetic data
+    #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < size; ++i) {
         // Set row and column indexes
         int r = i / w;
@@ -147,6 +149,7 @@ void update(SimulationData& sim) {
     int w = sim.width;
     int h = sim.height;
     
+    #pragma omp parallel for collapse(2) schedule(static)
     for (int r = 0; r < h; ++r) {
         for (int c = 0; c < w; ++c) {
             int idx = r * w + c;
@@ -199,7 +202,11 @@ void update(SimulationData& sim) {
 // Print statistics
 void print_stats(const SimulationData& sim, int step) {
     long long sus = 0, inf = 0, res = 0;
-    for (uint8_t s : sim.state) {
+    size_t size = sim.state.size();
+    
+    #pragma omp parallel for reduction(+:sus, inf, res)
+    for (size_t i = 0; i < size; ++i) {
+        uint8_t s = sim.state[i];
         if (s == Susceptible) sus++;
         else if (s == Infectious) inf++;
         else if (s == Resistant) res++;
