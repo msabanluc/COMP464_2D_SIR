@@ -14,8 +14,8 @@ const int DEFAULT_STEPS = 1000;
 
 // SIR Parameters (could add these as arguments later, we should play around with these to make sure we get interesting results)
 float initialInfectious = 0.01f; // 1% initial infection
-int infectiousTime = 14; // Infected cell remains infectious for 14 time steps
-int resistantTime = 240; // Resistant cell remains resistant for 240 time steps
+int infectiousTime = 10; // Infected cell remains infectious for 10 time steps
+int resistantTime = 50; // Resistant cell remains resistant for 50 time steps
 int seed = 1;
 
 enum State : uint8_t {
@@ -156,7 +156,7 @@ void update(SimulationData& sim) {
             if (s == Susceptible) {
                 int infectedNeighbors = checkInfectious(sim, r, c);
                 if (density > 0.0f && infectedNeighbors > 0) { // If a cell is susceptible, has population density > 0, and has at least one infectious neighbor, state may change to infectious
-                    float baseProb = (0.8f / (1.0f + 1800.0f * std::exp(-15.0f * density))) + 0.1f; // Base infection probability based on density
+                    float baseProb = (0.6f / (1.0f + 1800.0f * std::exp(-15.0f * density))) + 0.1f; // Base infection probability based on density
                     
                     float prob = 1.0f - std::pow(1.0f - baseProb, (float)infectedNeighbors); // Adjust probability based on number of infected neighbors: 1 - (1 - p)^k
 
@@ -216,6 +216,9 @@ int main(int argc, char** argv) {
     if (argc > 1) steps = std::atoi(argv[1]);
     if (argc > 2) width = std::atoi(argv[2]);
     if (argc > 3) height = std::atoi(argv[3]);
+    if (argc > 4) initialInfectious = std::atof(argv[4]);
+    if (argc > 5) infectiousTime = std::atoi(argv[5]);
+    if (argc > 6) resistantTime = std::atoi(argv[6]);
 
     std::cout << "Initializing SIR Simulation (" << width << "x" << height << ") for " << steps << " steps...\n";
 
