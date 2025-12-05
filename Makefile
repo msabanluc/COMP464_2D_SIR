@@ -37,10 +37,10 @@ OBJ_MPI = $(SRC_MPI:.cpp=.o)
 all: $(EXEC_SERIAL) $(EXEC_OMP) $(EXEC_MPI)
 
 $(OBJ_OMP): $(SRC_OMP)
-    $(CXX) $(CXXFLAGS_OMP) -c $< -o $@
+	$(CXX) $(CXXFLAGS_OMP) -c $< -o $@
 
 %.o: %.cpp
-    $(CXX) $(CXXFLAGS_COMMON) -c $< -o $@
+	$(CXX) $(CXXFLAGS_COMMON) -c $< -o $@
 
 $(EXEC_SERIAL): $(OBJ_SERIAL)
 	$(CXX) $(CXXFLAGS_COMMON) -o $(EXEC_SERIAL) $(OBJ_SERIAL)
