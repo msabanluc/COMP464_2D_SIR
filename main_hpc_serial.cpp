@@ -223,7 +223,12 @@ int main(int argc, char** argv) {
     std::cout << "Initializing SIR Simulation (" << width << "x" << height << ") for " << steps << " steps...\n";
 
     SimulationData sim; // Create empty simulation data structure
+    
+    auto init_start = std::chrono::high_resolution_clock::now();
     initialize(sim, width, height); // Initialize simulation data with synthetic values
+    auto init_end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> init_elapsed = init_end - init_start;
+    std::cout << "Initialization complete in " << init_elapsed.count() << " seconds.\n";
 
     print_stats(sim, 0); // Print initial stats
 
@@ -245,7 +250,7 @@ int main(int argc, char** argv) {
     std::cout << "Average time per step: " << (elapsed.count() / steps) * 1000.0 << " ms\n";
     
     // CSV Output: Steps, Width, Height, TotalTime(s), TimePerStep(ms)
-    std::cout << "CSV_DATA," << steps << "," << width << "," << height << "," 
+    std::cerr << "CSV_DATA," << steps << "," << width << "," << height << "," 
               << elapsed.count() << "," << (elapsed.count() / steps) * 1000.0 << "\n";
 
     print_stats(sim, steps);
