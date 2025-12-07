@@ -7,6 +7,13 @@
 #include <random>
 #include <algorithm>
 
+#include <mpi.h>
+
+
+//TODO: templates for any custom MPI datatypes we need.
+
+
+
 // Default simulation properties
 const int DEFAULT_WIDTH = 500;
 const int DEFAULT_HEIGHT = 500;
@@ -208,19 +215,28 @@ void print_stats(const SimulationData& sim, int step) {
 }
 
 int main(int argc, char** argv) {
+
+
     int steps = DEFAULT_STEPS;
     int width = DEFAULT_WIDTH;
     int height = DEFAULT_HEIGHT;
+    int numProcs, myRank;
 
     // Parse command-line arguments
+
     if (argc > 1) steps = std::atoi(argv[1]);
     if (argc > 2) width = std::atoi(argv[2]);
     if (argc > 3) height = std::atoi(argv[3]);
     if (argc > 4) initialInfectious = std::atof(argv[4]);
     if (argc > 5) infectiousTime = std::atoi(argv[5]);
     if (argc > 6) resistantTime = std::atoi(argv[6]);
+    //TODO: MPI arguments for  CL
+    if (argc > 7) numProcs = std::atoi(argv[7]);
+    MPI_Comm_size(MPI_COMM_WORLD,&numProcs);
+    MPI_Comm_rank(MPI_COMM_WORLD,&myRank);
 
-    std::cout << "Initializing SIR Simulation (" << width << "x" << height << ") for " << steps << " steps...\n";
+
+    std::cout << "Initializing SIR Simulation (" << width << "x" << height << ") for " << steps << " steps, with " << numProcs << "\n";
 
     SimulationData sim; // Create empty simulation data structure
     initialize(sim, width, height); // Initialize simulation data with synthetic values
@@ -249,6 +265,6 @@ int main(int argc, char** argv) {
               << elapsed.count() << "," << (elapsed.count() / steps) * 1000.0 << "\n";
 
     print_stats(sim, steps);
-
+    MPI_Finalize(); //finalize mpi calls
     return 0;
 }
