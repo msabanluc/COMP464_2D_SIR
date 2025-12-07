@@ -153,7 +153,7 @@ inline int checkInfectious(const SimulationData& sim, int r, int c) {
 void update(SimulationData& sim) {
     int w = sim.width;
     int h = sim.height;
-    
+    //TODO: need to adjust what rows are checked based on the process we are on.
     for (int r = 0; r < h; ++r) {
         for (int c = 0; c < w; ++c) {
             int idx = r * w + c;
@@ -161,7 +161,9 @@ void update(SimulationData& sim) {
             float density = sim.popDensity[idx];
             
             if (s == Susceptible) {
+
                 int infectedNeighbors = checkInfectious(sim, r, c);
+
                 if (density > 0.0f && infectedNeighbors > 0) { // If a cell is susceptible, has population density > 0, and has at least one infectious neighbor, state may change to infectious
                     float baseProb = (0.6f / (1.0f + 1800.0f * std::exp(-15.0f * density))) + 0.1f; // Base infection probability based on density
                     
@@ -230,7 +232,7 @@ int main(int argc, char** argv) {
     if (argc > 4) initialInfectious = std::atof(argv[4]);
     if (argc > 5) infectiousTime = std::atoi(argv[5]);
     if (argc > 6) resistantTime = std::atoi(argv[6]);
-    //TODO: MPI arguments for  CL
+    //TODO: check MPI arguments for  CL
     if (argc > 7) numProcs = std::atoi(argv[7]);
     MPI_Comm_size(MPI_COMM_WORLD,&numProcs);
     MPI_Comm_rank(MPI_COMM_WORLD,&myRank);
@@ -239,32 +241,45 @@ int main(int argc, char** argv) {
     std::cout << "Initializing SIR Simulation (" << width << "x" << height << ") for " << steps << " steps, with " << numProcs << "\n";
 
     SimulationData sim; // Create empty simulation data structure
-    initialize(sim, width, height); // Initialize simulation data with synthetic values
+    if (myRank == 0) {
+        initialize(sim, width, height); // Initialize simulation data with synthetic values
 
-    print_stats(sim, 0); // Print initial stats
+        print_stats(sim, 0); // Print initial stats
 
-    auto start_time = std::chrono::high_resolution_clock::now(); // Start timing
-
-    for (int i = 1; i <= steps; ++i) { // Loop over simulation steps
-        update(sim);
-        if (i % 100 == 0) { // Print stats every 100 steps
-            print_stats(sim, i); 
-        }
+        auto start_time = std::chrono::high_resolution_clock::now(); // Start timing
+`   }
+    //quick height calc for number of rows/process.
+    int rows_per_process = height/numProcs;
+    int extra_rows = height%numProcs;
+    if (myRank == numProcs - 1) {
+        rows_per_process = +=extra_rows;
     }
 
-    auto end_time = std::chrono::high_resolution_clock::now(); // End timing
-    
-    std::chrono::duration<double> elapsed = end_time - start_time;
+    //TODO: way to divy up the data for each process
+    for (int i = 1; i <= steps; ++i) { // Loop over simulation steps
+        //TODO: need to do the message passince here
+        update(sim);
+        if (i % 100 == 0) { // Print stats every 100 steps
+            //TODO: collect global data every 100 for stats?
+            print_stats(sim, i);
 
-    std::cout << "Simulation complete.\n";
-    std::cout << "Time elapsed: " << elapsed.count() << " seconds\n";
-    std::cout << "Average time per step: " << (elapsed.count() / steps) * 1000.0 << " ms\n";
-    
-    // CSV Output: Steps, Width, Height, TotalTime(s), TimePerStep(ms)
-    std::cout << "CSV_DATA," << steps << "," << width << "," << height << "," 
-              << elapsed.count() << "," << (elapsed.count() / steps) * 1000.0 << "\n";
+        }
+    }
+    if (myRank == 0) {
+        auto end_time = std::chrono::high_resolution_clock::now(); // End timing
 
-    print_stats(sim, steps);
+        std::chrono::duration<double> elapsed = end_time - start_time;
+
+        std::cout << "Simulation complete.\n";
+        std::cout << "Time elapsed: " << elapsed.count() << " seconds\n";
+        std::cout << "Average time per step: " << (elapsed.count() / steps) * 1000.0 << " ms\n";
+
+        // CSV Output: Steps, Width, Height, TotalTime(s), TimePerStep(ms)
+        std::cout << "CSV_DATA," << steps << "," << width << "," << height << ","
+                  << elapsed.count() << "," << (elapsed.count() / steps) * 1000.0 << "\n";
+
+        print_stats(sim, steps);
+    }
     MPI_Finalize(); //finalize mpi calls
     return 0;
 }
