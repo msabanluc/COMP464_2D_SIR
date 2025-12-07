@@ -35,6 +35,7 @@ enum State : uint8_t {
 struct SimulationData {
     int width;
     int height;
+    int processRank;
     std::vector<uint8_t> state;      // Current state
     std::vector<uint8_t> next_state; // Next state (buffer)
     std::vector<float> popDensity;   // Population density [0.0, 1.0]
@@ -153,6 +154,7 @@ inline int checkInfectious(const SimulationData& sim, int r, int c) {
 void update(SimulationData& sim) {
     int w = sim.width;
     int h = sim.height;
+    int rank = sim.processRank;
     //TODO: need to adjust what rows are checked based on the process we are on.
     for (int r = 0; r < h; ++r) {
         for (int c = 0; c < w; ++c) {
@@ -241,19 +243,22 @@ int main(int argc, char** argv) {
     std::cout << "Initializing SIR Simulation (" << width << "x" << height << ") for " << steps << " steps, with " << numProcs << "\n";
 
     SimulationData sim; // Create empty simulation data structure
-    if (myRank == 0) {
-        initialize(sim, width, height); // Initialize simulation data with synthetic values
-
-        print_stats(sim, 0); // Print initial stats
-
-        auto start_time = std::chrono::high_resolution_clock::now(); // Start timing
-`   }
+    sim.processRank = myRank;
     //quick height calc for number of rows/process.
     int rows_per_process = height/numProcs;
     int extra_rows = height%numProcs;
     if (myRank == numProcs - 1) {
         rows_per_process = +=extra_rows;
     }
+    if (myRank == 0) {
+        initialize(sim, width, height); // Initialize simulation data with synthetic values
+
+        print_stats(sim, 0); // Print initial stats
+
+        auto start_time = std::chrono::high_resolution_clock::now(); // Start timing
+    }
+
+
 
     //TODO: way to divy up the data for each process
     for (int i = 1; i <= steps; ++i) { // Loop over simulation steps
