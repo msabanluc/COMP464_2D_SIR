@@ -236,34 +236,74 @@ int main(int argc, char** argv) {
     if (argc > 6) resistantTime = std::atoi(argv[6]);
     //TODO: check MPI arguments for  CL
     if (argc > 7) numProcs = std::atoi(argv[7]);
-    MPI_Comm_size(MPI_COMM_WORLD,&numProcs);
-    MPI_Comm_rank(MPI_COMM_WORLD,&myRank);
 
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
-    std::cout << "Initializing SIR Simulation (" << width << "x" << height << ") for " << steps << " steps, with " << numProcs << "\n";
+    // Calculate scatter counts and displacements
+    std::vector<int> sendcounts(numProcs);
+    std::vector<int> displs(numProcs);
+    int rows_per_process = height / numProcs;
+    int extra_rows = height % numProcs;
+    int current_displ = 0;
 
-    SimulationData sim; // Create empty simulation data structure
-    sim.processRank = myRank;
-    //quick height calc for number of rows/process.
-    int rows_per_process = height/numProcs;
-    int extra_rows = height%numProcs;
-    if (myRank == numProcs - 1) {
-        rows_per_process = +=extra_rows;
+    for (int i = 0; i < numProcs; ++i) {
+        int rows = rows_per_process;
+        if (i < extra_rows) rows++;
+        sendcounts[i] = rows * width;
+        displs[i] = current_displ;
+        current_displ += sendcounts[i];
     }
+
+    // Initialize Global Simulation (Rank 0 only)
+    SimulationData global_sim;
     if (myRank == 0) {
-        initialize(sim, width, height); // Initialize simulation data with synthetic values
-
-        print_stats(sim, 0); // Print initial stats
-
-        auto start_time = std::chrono::high_resolution_clock::now(); // Start timing
+        std::cout << "Initializing SIR Simulation (" << width << "x" << height << ") for " << steps << " steps, with " << numProcs << " processes\n";
+        initialize(global_sim, width, height);
+        print_stats(global_sim, 0);
     }
+
+    // Initialize Local Simulation
+    SimulationData local_sim;
+    local_sim.processRank = myRank;
+    local_sim.width = width;
+    local_sim.height = sendcounts[myRank] / width;
+    int local_size = sendcounts[myRank];
+    
+    // Allocate extra space for halo rows
+    int alloc_size = local_size + (2 * width);
+
+    local_sim.state.resize(alloc_size);
+    local_sim.next_state.resize(alloc_size);
+    local_sim.popDensity.resize(alloc_size);
+    local_sim.time.resize(alloc_size);
+    local_sim.rng_state.resize(alloc_size);
+
+    // Scatter data to all processes
+    MPI_Scatterv(global_sim.state.data(), sendcounts.data(), displs.data(), MPI_UINT8_T,
+                 local_sim.state.data() + width, local_size, MPI_UINT8_T, 0, MPI_COMM_WORLD);
+    
+    MPI_Scatterv(global_sim.next_state.data(), sendcounts.data(), displs.data(), MPI_UINT8_T,
+                 local_sim.next_state.data() + width, local_size, MPI_UINT8_T, 0, MPI_COMM_WORLD);
+
+    MPI_Scatterv(global_sim.popDensity.data(), sendcounts.data(), displs.data(), MPI_FLOAT,
+                 local_sim.popDensity.data() + width, local_size, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+    MPI_Scatterv(global_sim.time.data(), sendcounts.data(), displs.data(), MPI_INT,
+                 local_sim.time.data() + width, local_size, MPI_INT, 0, MPI_COMM_WORLD);
+
+    MPI_Scatterv(global_sim.rng_state.data(), sendcounts.data(), displs.data(), MPI_UINT32_T,
+                 local_sim.rng_state.data() + width, local_size, MPI_UINT32_T, 0, MPI_COMM_WORLD);
+
+    auto start_time = std::chrono::high_resolution_clock::now();
 
 
 
     //TODO: way to divy up the data for each process
     for (int i = 1; i <= steps; ++i) { // Loop over simulation steps
         //TODO: need to do the message passince here
-        update(sim);
+        update(local_sim);
         if (i % 100 == 0) { // Print stats every 100 steps
             //TODO: collect global data every 100 for stats?
             print_stats(sim, i);
