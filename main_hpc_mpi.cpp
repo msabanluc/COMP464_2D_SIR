@@ -328,19 +328,19 @@ int main(int argc, char** argv) {
     local_sim.rng_state.resize(alloc_size);
 
     // Scatter data to all processes
-    MPI_Scatterv(global_sim.state.data(), sendcounts.data(), displs.data(), MPI_UINT8_T,
+    MPI_Scatterv(global_sim->state.data(), sendcounts.data(), displs.data(), MPI_UINT8_T,
                  local_sim.state.data() + width, local_size, MPI_UINT8_T, 0, MPI_COMM_WORLD);
     
-    MPI_Scatterv(global_sim.next_state.data(), sendcounts.data(), displs.data(), MPI_UINT8_T,
+    MPI_Scatterv(global_sim->next_state.data(), sendcounts.data(), displs.data(), MPI_UINT8_T,
                  local_sim.next_state.data() + width, local_size, MPI_UINT8_T, 0, MPI_COMM_WORLD);
 
-    MPI_Scatterv(global_sim.popDensity.data(), sendcounts.data(), displs.data(), MPI_FLOAT,
+    MPI_Scatterv(global_sim->popDensity.data(), sendcounts.data(), displs.data(), MPI_FLOAT,
                  local_sim.popDensity.data() + width, local_size, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-    MPI_Scatterv(global_sim.time.data(), sendcounts.data(), displs.data(), MPI_INT,
+    MPI_Scatterv(global_sim->time.data(), sendcounts.data(), displs.data(), MPI_INT,
                  local_sim.time.data() + width, local_size, MPI_INT, 0, MPI_COMM_WORLD);
 
-    MPI_Scatterv(global_sim.rng_state.data(), sendcounts.data(), displs.data(), MPI_UINT32_T,
+    MPI_Scatterv(global_sim->rng_state.data(), sendcounts.data(), displs.data(), MPI_UINT32_T,
                  local_sim.rng_state.data() + width, local_size, MPI_UINT32_T, 0, MPI_COMM_WORLD);
 
     delete global_sim;
