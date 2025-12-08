@@ -150,6 +150,15 @@ inline int checkInfectious(const SimulationData& sim, int r, int c) {
     return count;
 }
 
+
+void exchange_halos(SimulationData& sim, int numProcs) {
+    int rank = sim.processRank;
+    int w = sim.width;
+    int h = sim.height;
+
+    // TODO: Implement the send and recieve of halo row sbetween processes. I think this will include 2 MPI_Sendrecv calls?
+}
+
 // Update simulation state for one time step
 void update(SimulationData& sim) {
     int w = sim.width;
