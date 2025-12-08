@@ -14,10 +14,7 @@ for p in $PROCS; do
     echo "  - Processes: $p"
     for s in $SIZES; do
         echo "      - Grid: $s x $s"
-        # Run simulation
-        # We use tee /dev/tty to show output on screen while piping to grep
-        # Note: main_hpc_mpi.cpp prints to stdout. 
-        mpirun -np $p ./sir_sim_mpi $STEPS $s $s 2>&1 >/dev/tty | grep "CSV_DATA" | sed "s/CSV_DATA,/MPI,$p,/" >> $OUTPUT_FILE
+        mpirun $MPI_ARGS -np $p ./sir_sim_mpi $STEPS $s $s | tee /dev/tty | grep "CSV_DATA" | sed "s/CSV_DATA,/MPI,$p,/" >> $OUTPUT_FILE
     done
 done
 

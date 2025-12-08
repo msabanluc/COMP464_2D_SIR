@@ -155,6 +155,8 @@ inline int checkInfectious(const SimulationData& sim, int r, int c) {
 
 
 void exchange_halos(SimulationData& sim, int numProcs) {
+    if (numProcs <= 1) return;
+
     int rank = sim.processRank;
     int w = sim.width;
     int h = sim.height;
