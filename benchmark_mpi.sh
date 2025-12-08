@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Output file
+OUTPUT_FILE="benchmark_results_mpi.csv"
+
+# Benchmark Parameters
+STEPS=1000
+SIZES="500 1000 2000 5000 10000 20000"
+PROCS="1 2 4 8 16"
+
+# Run MPI Benchmark
+echo "Running MPI Benchmarks..."
+for p in $PROCS; do
+    echo "  - Processes: $p"
+    for s in $SIZES; do
+        echo "      - Grid: $s x $s"
+        # Run simulation
+        # We use tee /dev/tty to show output on screen while piping to grep
+        # Note: main_hpc_mpi.cpp prints to stdout. 
+        mpirun -np $p ./sir_sim_mpi $STEPS $s $s 2>&1 >/dev/tty | grep "CSV_DATA" | sed "s/CSV_DATA,/MPI,$p,/" >> $OUTPUT_FILE
+    done
+done
+
+echo "MPI Benchmarking Complete! Results appended to $OUTPUT_FILE"
