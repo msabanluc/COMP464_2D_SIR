@@ -33,9 +33,9 @@ enum State : uint8_t {
 
 // Structure of arrays for simulation data
 struct SimulationData {
+    int processRank;
     int width;
     int height;
-    int processRank;
     std::vector<uint8_t> state;      // Current state
     std::vector<uint8_t> next_state; // Next state (buffer)
     std::vector<float> popDensity;   // Population density [0.0, 1.0]
@@ -155,8 +155,35 @@ void exchange_halos(SimulationData& sim, int numProcs) {
     int rank = sim.processRank;
     int w = sim.width;
     int h = sim.height;
+    int above = rank-1;
+    int below = rank+1;
+    int tag = 100
 
-    // TODO: Implement the send and recieve of halo row sbetween processes. I think this will include 2 MPI_Sendrecv calls?
+
+    if (rank ==0){
+        // do top sendrecv
+        MPI_Sendrecv(sim.state[h*w].data(), w, MPI_UINT8_T, below, tag,
+                     sim.state[(h+1)*w].data(), w, MPI_UINT8_T, below, tag,
+                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);  //figure out params
+    }
+    else if (rank ==numProcs-1){
+        //do bottom sendrecv
+        MPI_Sendrecv(sim.state[1*w].data(), w, MPI_UINT8_T, top, tag,
+                     sim.state[0].data(), w, MPI_UINT8_T, top, tag,
+                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);  //figure out params
+    }
+    else{
+        MPI_Sendrecv(sim.state[h*w].data(), w, MPI_UINT8_T, below, tag,
+                     sim.state[(h+1)*w].data(), w, MPI_UINT8_T, below, tag,
+                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
+
+        MPI_Sendrecv(sim.state[1*w].data(), w, MPI_UINT8_T, top, tag,
+                     sim.state[0].data(), w, MPI_UINT8_T, top, tag,
+                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
+
+
+
+    }
 }
 
 // Update simulation state for one time step
@@ -229,6 +256,7 @@ void print_stats(const SimulationData& sim, int step) {
 
 int main(int argc, char** argv) {
 
+    MPI_Init(&argc, &argv); //what are these?
 
     int steps = DEFAULT_STEPS;
     int width = DEFAULT_WIDTH;
@@ -310,13 +338,15 @@ int main(int argc, char** argv) {
 
 
     for (int i = 1; i <= steps; ++i) { // Loop over simulation steps
-        //TODO: need to do the message passince here
-        exhange_halos(local_sim, numProcs); // maybe add some type of function to handle this??
+        exchange_halos(local_sim, numProcs); // maybe add some type of function to handle this??
         update(local_sim);
         if (i % 100 == 0) { // Print stats every 100 steps
             //TODO: collect global data every 100 for stats?
-            print_stats(sim, i); // sim doesn't exist here... have to figure out how to handle this.
-
+            if (myRank == 0) {
+                //MPI_Gatherv(local_sim.state.data(),width,MPI_UINT8_T,
+                //            &global_sim.state.data(), )
+                //print_stats(sim, i); // sim doesn't exist here... have to figure out how to handle this.
+            }
         }
     }
     if (myRank == 0) {
