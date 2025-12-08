@@ -347,9 +347,9 @@ int main(int argc, char** argv) {
     delete global_sim;
     global_sim = nullptr;
 
-    std::vector<uint8_t> *new_global = nullptr;
+    std::vector<uint8_t>* new_global = nullptr;
     if (myRank == 0) {
-        std::vector<uint8_t>* new_global = new std::vector<uint8_t>;
+        new_global = new std::vector<uint8_t>;
         new_global->resize(height * width);
     }
 
@@ -362,8 +362,8 @@ int main(int argc, char** argv) {
         update(local_sim);
         if (i % 100 == 0) { // Print stats every 100 steps
             //TODO: collect global data every 100 for stats?
-            MPI_Gatherv(local_sim.state.data(), local_size, MPI_UINT8_T,
-                new_global, sendcounts.data(), displs.data(), MPI_UINT8_T, 0, MPI_COMM_WORLD);
+            MPI_Gatherv(local_sim.state.data() + width, local_size, MPI_UINT8_T,
+                myRank == 0 ? new_global->data() : nullptr, sendcounts.data(), displs.data(), MPI_UINT8_T, 0, MPI_COMM_WORLD);
             if (myRank == 0) {
                 print_stats_state(*new_global, i);// passing new_global state array
                 delete new_global;
@@ -376,8 +376,8 @@ int main(int argc, char** argv) {
         std::vector<uint8_t>* new_global = new std::vector<uint8_t>;
         new_global->resize(height * width);
     }
-    MPI_Gatherv(local_sim.state.data(), local_size, MPI_UINT8_T,
-                new_global, sendcounts.data(), displs.data(), MPI_UINT8_T, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(local_sim.state.data() + width, local_size, MPI_UINT8_T,
+                myRank == 0 ? new_global->data() : nullptr, sendcounts.data(), displs.data(), MPI_UINT8_T, 0, MPI_COMM_WORLD);
     if (myRank == 0) {
         auto end_time = std::chrono::high_resolution_clock::now(); // End timing
 
