@@ -365,8 +365,6 @@ int main(int argc, char** argv) {
                 myRank == 0 ? new_global->data() : nullptr, sendcounts.data(), displs.data(), MPI_UINT8_T, 0, MPI_COMM_WORLD);
             if (myRank == 0) {
                 print_stats_state(*new_global, i);// passing new_global state array
-                delete new_global;
-                new_global = nullptr;
             }
 
         }
