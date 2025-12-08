@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <ranges>
 #include <string>
 #include <cmath>
 #include <cstdlib>
@@ -7,7 +8,9 @@
 #include <random>
 #include <algorithm>
 
+
 #include <mpi.h>
+#include <valarray>
 
 
 //TODO: templates for any custom MPI datatypes we need.
@@ -162,23 +165,23 @@ void exchange_halos(SimulationData& sim, int numProcs) {
 
     if (rank ==0){
         // do top sendrecv
-        MPI_Sendrecv(sim.state[h*w].data(), w, MPI_UINT8_T, below, tag,
-                     sim.state[(h+1)*w].data(), w, MPI_UINT8_T, below, tag,
+        MPI_Sendrecv(&sim.state[h*w],w, MPI_UINT8_T, below, tag,
+                     &sim.state[(h+1)*w], w, MPI_UINT8_T, below, tag,
                      MPI_COMM_WORLD,  MPI_STATUS_IGNORE);  //figure out params
     }
     else if (rank ==numProcs-1){
         //do bottom sendrecv
-        MPI_Sendrecv(sim.state[1*w].data(), w, MPI_UINT8_T, above, tag,
-                     sim.state[0].data(), w, MPI_UINT8_T, above, tag,
+        MPI_Sendrecv(&sim.state[1*w], w, MPI_UINT8_T, above, tag,
+                     &sim.state[0], w, MPI_UINT8_T, above, tag,
                      MPI_COMM_WORLD,  MPI_STATUS_IGNORE);  //figure out params
     }
     else{
-        MPI_Sendrecv(sim.state[h*w].data(), w, MPI_UINT8_T, below, tag,
-                     sim.state[(h+1)*w].data(), w, MPI_UINT8_T, below, tag,
+        MPI_Sendrecv(&sim.state[h*w], w, MPI_UINT8_T, below, tag,
+                     &sim.state[(h+1)*w], w, MPI_UINT8_T, below, tag,
                      MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
 
-        MPI_Sendrecv(sim.state[1*w].data(), w, MPI_UINT8_T, above, tag,
-                     sim.state[0].data(), w, MPI_UINT8_T, above, tag,
+        MPI_Sendrecv(&sim.state[1*w], w, MPI_UINT8_T, above, tag,
+                     &sim.state[0], w, MPI_UINT8_T, above, tag,
                      MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
 
 
