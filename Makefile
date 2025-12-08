@@ -38,7 +38,7 @@ EXEC_MPI_NO_BUFF = sir_sim_mpi_nobuff
 SRC_SERIAL = main_hpc_serial.cpp
 SRC_OMP = main_hpc_openmp.cpp
 SRC_MPI = main_hpc_mpi.cpp
-SRC_MPI_NO_BUFF = main_hpc_mpi_nb
+SRC_MPI_NO_BUFF = main_hpc_mpi_nb.cpp
 
 OBJ_SERIAL = $(SRC_SERIAL:.cpp=.o)
 OBJ_OMP = $(SRC_OMP:.cpp=.o)
