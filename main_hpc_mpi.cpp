@@ -193,7 +193,6 @@ void exchange_halos(SimulationData& sim, int numProcs) {
 void update(SimulationData& sim) {
     int w = sim.width;
     int h = sim.height;
-    int rank = sim.processRank;
     //TODO: need to adjust what rows are checked based on the process we are on.
     for (int r = 1; r <= h; ++r) {
         for (int c = 0; c < w; ++c) {
