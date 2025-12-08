@@ -12,11 +12,6 @@
 #include <mpi.h>
 #include <valarray>
 
-
-//TODO: templates for any custom MPI datatypes we need.
-
-
-
 // Default simulation properties
 const int DEFAULT_WIDTH = 500;
 const int DEFAULT_HEIGHT = 500;
@@ -169,13 +164,13 @@ void exchange_halos(SimulationData& sim, int numProcs) {
         // do top sendrecv
         MPI_Sendrecv(&sim.state[h*w],w, MPI_UINT8_T, below, tag,
                      &sim.state[(h+1)*w], w, MPI_UINT8_T, below, tag,
-                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);  //figure out params
+                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
     }
     else if (rank ==numProcs-1){
         //do bottom sendrecv
         MPI_Sendrecv(&sim.state[1*w], w, MPI_UINT8_T, above, tag,
                      &sim.state[0], w, MPI_UINT8_T, above, tag,
-                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);  //figure out params
+                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
     }
     else{
         MPI_Sendrecv(&sim.state[h*w], w, MPI_UINT8_T, below, tag,
@@ -195,7 +190,6 @@ void exchange_halos(SimulationData& sim, int numProcs) {
 void update(SimulationData& sim) {
     int w = sim.width;
     int h = sim.height;
-    //TODO: need to adjust what rows are checked based on the process we are on.
     for (int r = 1; r <= h; ++r) {
         for (int c = 0; c < w; ++c) {
             int idx = r * w + c;
@@ -283,7 +277,6 @@ int main(int argc, char** argv) {
     if (argc > 4) initialInfectious = std::atof(argv[4]);
     if (argc > 5) infectiousTime = std::atoi(argv[5]);
     if (argc > 6) resistantTime = std::atoi(argv[6]);
-    //TODO: check MPI arguments for  CL
     if (argc > 7) numProcs = std::atoi(argv[7]);
 
     MPI_Init(&argc, &argv);
@@ -362,7 +355,6 @@ int main(int argc, char** argv) {
         exchange_halos(local_sim, numProcs); // maybe add some type of function to handle this??
         update(local_sim);
         if (i % 100 == 0) { // Print stats every 100 steps
-            //TODO: collect global data every 100 for stats?
             MPI_Gatherv(local_sim.state.data() + width, local_size, MPI_UINT8_T,
                 myRank == 0 ? new_global->data() : nullptr, sendcounts.data(), displs.data(), MPI_UINT8_T, 0, MPI_COMM_WORLD);
             if (myRank == 0) {
