@@ -157,7 +157,7 @@ void exchange_halos(SimulationData& sim, int numProcs) {
     int h = sim.height;
     int above = rank-1;
     int below = rank+1;
-    int tag = 100
+    int tag = 100;
 
 
     if (rank ==0){
@@ -168,8 +168,8 @@ void exchange_halos(SimulationData& sim, int numProcs) {
     }
     else if (rank ==numProcs-1){
         //do bottom sendrecv
-        MPI_Sendrecv(sim.state[1*w].data(), w, MPI_UINT8_T, top, tag,
-                     sim.state[0].data(), w, MPI_UINT8_T, top, tag,
+        MPI_Sendrecv(sim.state[1*w].data(), w, MPI_UINT8_T, above, tag,
+                     sim.state[0].data(), w, MPI_UINT8_T, above, tag,
                      MPI_COMM_WORLD,  MPI_STATUS_IGNORE);  //figure out params
     }
     else{
@@ -177,8 +177,8 @@ void exchange_halos(SimulationData& sim, int numProcs) {
                      sim.state[(h+1)*w].data(), w, MPI_UINT8_T, below, tag,
                      MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
 
-        MPI_Sendrecv(sim.state[1*w].data(), w, MPI_UINT8_T, top, tag,
-                     sim.state[0].data(), w, MPI_UINT8_T, top, tag,
+        MPI_Sendrecv(sim.state[1*w].data(), w, MPI_UINT8_T, above, tag,
+                     sim.state[0].data(), w, MPI_UINT8_T, above, tag,
                      MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
 
 
@@ -253,6 +253,16 @@ void print_stats(const SimulationData& sim, int step) {
     }
     std::cout << "Step " << step << ": S=" << sus << " I=" << inf << " R=" << res << "\n";
 }
+void print_stats_state(const std::vector<uint8_t> &state, int step) {
+    long long sus = 0, inf = 0, res = 0;
+    for (uint8_t s : state) {
+        if (s == Susceptible) sus++;
+        else if (s == Infectious) inf++;
+        else if (s == Resistant) res++;
+    }
+    std::cout << "Step " << step << ": S=" << sus << " I=" << inf << " R=" << res << "\n";
+}
+
 
 int main(int argc, char** argv) {
 
@@ -294,11 +304,11 @@ int main(int argc, char** argv) {
     }
 
     // Initialize Global Simulation (Rank 0 only)
-    SimulationData global_sim;
+    auto* global_sim = new SimulationData();
     if (myRank == 0) {
         std::cout << "Initializing SIR Simulation (" << width << "x" << height << ") for " << steps << " steps, with " << numProcs << " processes\n";
-        initialize(global_sim, width, height);
-        print_stats(global_sim, 0);
+        initialize(*global_sim, width, height);
+        print_stats(*global_sim, 0);
     }
 
     // Initialize Local Simulation
@@ -333,6 +343,15 @@ int main(int argc, char** argv) {
     MPI_Scatterv(global_sim.rng_state.data(), sendcounts.data(), displs.data(), MPI_UINT32_T,
                  local_sim.rng_state.data() + width, local_size, MPI_UINT32_T, 0, MPI_COMM_WORLD);
 
+    delete global_sim;
+    global_sim = nullptr;
+
+    std::vector<uint8_t> *new_global = nullptr;
+    if (myRank == 0) {
+        std::vector<uint8_t>* new_global = new std::vector<uint8_t>;
+        new_global->resize(height * width);
+    }
+
     auto start_time = std::chrono::high_resolution_clock::now();
 
 
@@ -342,13 +361,22 @@ int main(int argc, char** argv) {
         update(local_sim);
         if (i % 100 == 0) { // Print stats every 100 steps
             //TODO: collect global data every 100 for stats?
+            MPI_Gatherv(local_sim.state.data(), local_size, MPI_UINT8_T,
+                new_global, sendcounts.data(), displs.data(), MPI_UINT8_T, 0, MPI_COMM_WORLD);
             if (myRank == 0) {
-                //MPI_Gatherv(local_sim.state.data(),width,MPI_UINT8_T,
-                //            &global_sim.state.data(), )
-                //print_stats(sim, i); // sim doesn't exist here... have to figure out how to handle this.
+                print_stats_state(*new_global, i);// passing new_global state array
+                delete new_global;
+                new_global = nullptr;
             }
+
         }
     }
+    if (myRank == 0) {
+        std::vector<uint8_t>* new_global = new std::vector<uint8_t>;
+        new_global->resize(height * width);
+    }
+    MPI_Gatherv(local_sim.state.data(), local_size, MPI_UINT8_T,
+                new_global, sendcounts.data(), displs.data(), MPI_UINT8_T, 0, MPI_COMM_WORLD);
     if (myRank == 0) {
         auto end_time = std::chrono::high_resolution_clock::now(); // End timing
 
@@ -362,7 +390,7 @@ int main(int argc, char** argv) {
         std::cout << "CSV_DATA," << steps << "," << width << "," << height << ","
                   << elapsed.count() << "," << (elapsed.count() / steps) * 1000.0 << "\n";
 
-        print_stats(sim, steps);
+        print_stats_state(*new_global, steps);
     }
     MPI_Finalize(); //finalize mpi calls
     return 0;
