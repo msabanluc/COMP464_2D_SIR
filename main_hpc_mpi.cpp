@@ -300,13 +300,13 @@ int main(int argc, char** argv) {
 
 
 
-    //TODO: way to divy up the data for each process
     for (int i = 1; i <= steps; ++i) { // Loop over simulation steps
         //TODO: need to do the message passince here
+        exhange_halos(local_sim, numProcs); // maybe add some type of function to handle this??
         update(local_sim);
         if (i % 100 == 0) { // Print stats every 100 steps
             //TODO: collect global data every 100 for stats?
-            print_stats(sim, i);
+            print_stats(sim, i); // sim doesn't exist here... have to figure out how to handle this.
 
         }
     }
