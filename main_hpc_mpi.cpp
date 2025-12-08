@@ -269,8 +269,6 @@ void print_stats_state(const std::vector<uint8_t> &state, int step) {
 
 int main(int argc, char** argv) {
 
-    MPI_Init(&argc, &argv); //what are these?
-
     int steps = DEFAULT_STEPS;
     int width = DEFAULT_WIDTH;
     int height = DEFAULT_HEIGHT;
