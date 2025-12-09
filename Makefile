@@ -34,6 +34,7 @@ EXEC_SERIAL = sir_sim
 EXEC_OMP = sir_sim_omp
 EXEC_MPI = sir_sim_mpi
 EXEC_MPI_NO_BUFF = sir_sim_mpi_nobuff
+EXEC_HYBRID = sir_sim_hybrid
 
 SRC_SERIAL = main_hpc_serial.cpp
 SRC_OMP = main_hpc_openmp.cpp
