@@ -6,6 +6,7 @@
 #include <chrono>
 #include <random>
 #include <algorithm>
+
 #include <omp.h>
 
 // Default simulation properties
@@ -148,7 +149,6 @@ inline int checkInfectious(const SimulationData& sim, int r, int c) {
 void update(SimulationData& sim) {
     int w = sim.width;
     int h = sim.height;
-    
     #pragma omp parallel for collapse(2) schedule(static)
     for (int r = 0; r < h; ++r) {
         for (int c = 0; c < w; ++c) {
