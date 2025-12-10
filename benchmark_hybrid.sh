@@ -13,7 +13,7 @@ echo "Running Hybrid MPI and OpenMP Benchmarks ..."
 for p in $PROCS; do
     export OMP_NUM_THREADS=16
     echo "  - Processes: $p"
-    echo "  - Threads: 16
+    echo "  - Threads: 16"
     for s in $SIZES; do
         echo "      - Grid: $s x $s"
         mpirun $MPI_ARGS -np $p -hostfile my-hosts-64 ./sir_sim_hybrid $STEPS $s $s | tee /dev/tty | grep "CSV_DATA" | sed "s/CSV_DATA,/MPI,$p,/" >> $OUTPUT_FILE
