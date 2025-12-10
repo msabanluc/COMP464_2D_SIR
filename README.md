@@ -29,6 +29,5 @@ Each executable takes the following command-line arguments:
 
 ## Visualization
 
-<video src="presentation/sir_simulation.mp4" controls="controls" style="max-width: 100%;">
-</video>
+![SIR Simulation](presentation/sir_simulation.gif)
 
