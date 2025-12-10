@@ -35,23 +35,30 @@ EXEC_OMP = sir_sim_omp
 EXEC_MPI = sir_sim_mpi
 EXEC_MPI_NO_BUFF = sir_sim_mpi_nobuff
 EXEC_HYBRID = sir_sim_hybrid
+EXEC_SERIAL_VISUAL = sir_sim_visual
 
 SRC_SERIAL = main_hpc_serial.cpp
 SRC_OMP = main_hpc_openmp.cpp
 SRC_MPI = main_hpc_mpi.cpp
 SRC_MPI_NO_BUFF = main_hpc_mpi_nb.cpp
 SRC_HYBRID = main_hpc_hybrid_mpi_openmp.cpp
+SRC_SERIAL_VISUAL = main_hpc_serial_visual.cpp
 
 OBJ_SERIAL = $(SRC_SERIAL:.cpp=.o)
 OBJ_OMP = $(SRC_OMP:.cpp=.o)
 OBJ_MPI = $(SRC_MPI:.cpp=.o)
 OBJ_MPI_NO_BUFF = $(SRC_MPI_NO_BUFF:.cpp=.o)
 OBJ_HYBRID = $(SRC_HYBRID:.cpp=.o)
+OBJ_SERIAL_VISUAL = $(SRC_SERIAL_VISUAL:.cpp=.o)
 
-all: $(EXEC_SERIAL) $(EXEC_OMP) $(EXEC_MPI) $(EXEC_MPI_NO_BUFF) $(EXEC_HYBRID)
+all: $(EXEC_SERIAL) $(EXEC_OMP) $(EXEC_MPI) $(EXEC_MPI_NO_BUFF) $(EXEC_HYBRID) $(EXEC_SERIAL_VISUAL)
 
 # Compile Serial Object
 $(OBJ_SERIAL): $(SRC_SERIAL)
+	$(CXX) $(CXXFLAGS_HOST) -c $< -o $@
+
+# Compile Serial Visual Object
+$(OBJ_SERIAL_VISUAL): $(SRC_SERIAL_VISUAL)
 	$(CXX) $(CXXFLAGS_HOST) -c $< -o $@
 
 # Compile OpenMP Object (needs OMP flag)
@@ -74,6 +81,10 @@ $(OBJ_HYBRID): $(SRC_HYBRID)
 $(EXEC_SERIAL): $(OBJ_SERIAL)
 	$(CXX) $(CXXFLAGS_HOST) -o $(EXEC_SERIAL) $(OBJ_SERIAL)
 
+# Link Serial Visual Executable
+$(EXEC_SERIAL_VISUAL): $(OBJ_SERIAL_VISUAL)
+	$(CXX) $(CXXFLAGS_HOST) -o $(EXEC_SERIAL_VISUAL) $(OBJ_SERIAL_VISUAL)
+
 # Link OpenMP Executable
 $(EXEC_OMP): $(OBJ_OMP)
 	$(CXX) $(CXXFLAGS_HOST) $(OMP_FLAG) -o $(EXEC_OMP) $(OBJ_OMP)
@@ -91,4 +102,4 @@ $(EXEC_HYBRID): $(OBJ_HYBRID)
 	$(MPICXX) $(CXXFLAGS_MPI_BUILD) $(OMP_FLAG) -o $(EXEC_HYBRID) $(OBJ_HYBRID)
 
 clean:
-	/bin/rm -fv $(EXEC_SERIAL) $(EXEC_OMP) $(EXEC_MPI) $(EXEC_MPI_NO_BUFF) $(EXEC_HYBRID) $(OBJ_SERIAL) $(OBJ_OMP) $(OBJ_MPI) $(OBJ_MPI_NO_BUFF) $(OBJ_HYBRID) *.optrpt
+	/bin/rm -fv $(EXEC_SERIAL) $(EXEC_OMP) $(EXEC_MPI) $(EXEC_MPI_NO_BUFF) $(EXEC_HYBRID) $(EXEC_SERIAL_VISUAL) $(OBJ_SERIAL) $(OBJ_OMP) $(OBJ_MPI) $(OBJ_MPI_NO_BUFF) $(OBJ_HYBRID) $(OBJ_SERIAL_VISUAL) *.optrpt
