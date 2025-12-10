@@ -159,32 +159,28 @@ void exchange_halos(SimulationData& sim, int numProcs) {
     int below = rank+1;
     int tag = 100;
 
+    // Initialize requests with NULL handles so Waitall ignores unused slots
+    std::vector<MPI_Request> reqs(4, MPI_REQUEST_NULL);
 
-    if (rank ==0){
-        // do top sendrecv
-        MPI_Sendrecv(&sim.state[h*w],w, MPI_UINT8_T, below, tag,
-                     &sim.state[(h+1)*w], w, MPI_UINT8_T, below, tag,
-                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
+    // Interaction with "below"
+    if (rank != numProcs - 1) {
+        // Receive from below into bottom halo
+        MPI_Irecv(&sim.state[(h+1)*w], w, MPI_UINT8_T, below, tag, MPI_COMM_WORLD, &reqs[0]);
+        // Send bottom real row to below
+        MPI_Isend(&sim.state[h*w], w, MPI_UINT8_T, below, tag, MPI_COMM_WORLD, &reqs[2]);
+        }
+
+    // Interaction with "above"
+    if (rank != 0) {
+        // Receive from above into top halo
+        MPI_Irecv(&sim.state[0], w, MPI_UINT8_T, above, tag, MPI_COMM_WORLD, &reqs[1]);
+        // Send top real row to above
+        MPI_Isend(&sim.state[1*w], w, MPI_UINT8_T, above, tag, MPI_COMM_WORLD, &reqs[3]);
+        }
+
+    MPI_Waitall(4, reqs.data(), MPI_STATUSES_IGNORE);
     }
-    else if (rank ==numProcs-1){
-        //do bottom sendrecv
-        MPI_Sendrecv(&sim.state[1*w], w, MPI_UINT8_T, above, tag,
-                     &sim.state[0], w, MPI_UINT8_T, above, tag,
-                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
-    }
-    else{
-        MPI_Sendrecv(&sim.state[h*w], w, MPI_UINT8_T, below, tag,
-                     &sim.state[(h+1)*w], w, MPI_UINT8_T, below, tag,
-                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
 
-        MPI_Sendrecv(&sim.state[1*w], w, MPI_UINT8_T, above, tag,
-                     &sim.state[0], w, MPI_UINT8_T, above, tag,
-                     MPI_COMM_WORLD,  MPI_STATUS_IGNORE);
-
-
-
-    }
-}
 
 // Update simulation state for one time step
 void update(SimulationData& sim) {
