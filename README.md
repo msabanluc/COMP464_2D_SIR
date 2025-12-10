@@ -1,19 +1,34 @@
-# sir
+# SIR Model HPC Simulation
 
-This is a university project meant to simulate the spread of diseases using an SIR Cellular Automata model.
+This project implements a simulation of disease spread using the SIR (Susceptible-Infectious-Resistant) Cellular Automata model, specifically to test HPC techniques to simulate large grids efficiently.
 
-Capabilities:
-- large cell fields (by default 250,000 cells)
-- three types of cells: susceptible, infectious, resistant
-- takes into account population density for infection chances
-- can modify multiple variables such as the length of the infectious and resistance periods, initial infections, base infection chance, and more
-- can switch out the population density map
-- intuitive UI using ImGUI that allows the change of variables on the fly
+This project is based on the original implementation by [Victor Gordan](https://github.com/VictorGordan/sir). We started by cloning their repository and extending it for HPC benchmarking with various parallelization strategies.
 
-Simulation Example:
 
-![ExampleGIF](https://github.com/VictorGordan/sir/blob/main/gif/SIR%20Model.gif)
+The project includes several implementations to explore different parallelization strategies:
 
-UI Example:
+1.  **Serial (`sir_sim`)**: A baseline serial implementation
+2.  **OpenMP (`sir_sim_omp`)**: Shared memory optimization using OpenMP
+3.  **MPI (`sir_sim_mpi`)**: Distributed memory optimization using MPI
+4.  **MPI No Buffer (`sir_sim_mpi_nobuff`)**: MPI with non-blocking communication
+5.  **Hybrid (`sir_sim_hybrid`)**: Combines MPI and OpenMP for both distributed and shared memory parallelism
 
-![ExampleGIF](https://github.com/VictorGordan/sir_model/blob/main/gif/UI.gif)
+
+
+## Running the Simulation
+
+Each executable takes the following command-line arguments:
+```bash
+./<executable> <steps> <width> <height>
+```
+
+-   `steps`: Number of simulation steps.
+-   `width`: Width of the grid.
+-   `height`: Height of the grid.
+
+
+## Visualization
+
+<video src="presentation/sir_simulation.mp4" controls="controls" style="max-width: 100%;">
+</video>
+
